@@ -2,15 +2,18 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Dashboard;
+use App\Filament\Widgets\ErpStatsOverview;
+use App\Filament\Widgets\GreetingWidget;
+use App\Filament\Widgets\OngoingProjectsWidget;
+use App\Filament\Widgets\PendingTasksWidget;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -30,10 +33,9 @@ class AdminPanelProvider extends PanelProvider
             ->brandName(config('erp.name', 'Instacertify ERP'))
             ->favicon(asset('favicon.ico'))
             ->colors([
-                // Instacertify brand: deep teal primary + orange highlight
                 'primary' => Color::hex('#065175'),
-                'warning' => Color::hex('#ec691f'),
-                'danger' => Color::hex('#ec691f'),
+                'warning' => Color::hex('#ec6820'),
+                'danger' => Color::hex('#ec6820'),
                 'gray' => Color::Slate,
             ])
             ->font('Figtree')
@@ -44,8 +46,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                \App\Filament\Widgets\ErpStatsOverview::class,
+                GreetingWidget::class,
+                ErpStatsOverview::class,
+                OngoingProjectsWidget::class,
+                PendingTasksWidget::class,
             ])
             ->navigationGroups([
                 'CRM',
@@ -54,9 +58,12 @@ class AdminPanelProvider extends PanelProvider
                 'Calendar',
                 'Collaboration',
                 'Storage',
+                'Libraries',
+                'Assets',
                 'Quality',
                 'HR',
                 'Finance',
+                'My Profile',
                 'Settings',
             ])
             ->sidebarCollapsibleOnDesktop()

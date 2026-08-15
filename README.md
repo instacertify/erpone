@@ -92,6 +92,21 @@ Under **Settings → ERP Settings** (admin / super admin only):
 - Optimize / clear caches
 - Bulk Excel download (admin only)
 
-## Next iterations
+## Consulting workflow (v0.2)
 
-This PR establishes the framework. Follow-up work will deepen each module (workflows, permissions matrix, chat UI, calendar views, GST e-invoice posting, OpenSearch, etc.).
+Built for Instacertify as a certification consulting firm:
+
+- Lead CRM with source, company size, India states, service vs testing request
+- Quotation templates + multi-currency (INR primary)
+- Quote line types: consulting, government fees, testing/lab (revenue vs passthrough)
+- Shareable customer quote link with accept / request-changes + QR barcode
+- Start project from accepted quote
+- Lab library, sample tracking with QR, customer records, assets, HR profile (slips/holidays/attendance)
+- Roles: Super Admin / Admin, All Ops Manager, Sales, Operations
+- Colorful dashboard with greeting, stats, project tiles, pending tasks
+
+Demo users (password `Legal@123`):
+- `nikhil@instacertify.com` — Super Admin
+- `opslead@instacertify.com` — All Ops Manager
+- `sales@instacertify.com` — Sales
+- `operations@instacertify.com` — Operations

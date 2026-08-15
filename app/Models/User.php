@@ -57,6 +57,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->role?->canManageSettings() ?? false;
     }
 
+    public function canViewEverything(): bool
+    {
+        return $this->role?->canViewEverything() ?? false;
+    }
+
+    public function isSales(): bool
+    {
+        return $this->role === UserRole::Sales;
+    }
+
     public function employee(): HasOne
     {
         return $this->hasOne(Employee::class);

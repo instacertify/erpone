@@ -14,6 +14,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class QuotationItem extends Model
 {
+    protected static function booted(): void
+    {
+        static::saving(function (self $item): void {
+            if (in_array($item->item_type, ['consulting', 'testing', 'lab'], true)) {
+                $item->counts_as_revenue = true;
+            } elseif ($item->item_type === 'government_fee') {
+                $item->counts_as_revenue = false;
+            }
+            $item->line_total = round(
+                (float) $item->quantity
+                * (float) $item->unit_price
+                * (1 + ((float) $item->tax_rate / 100)),
+                2,
+            );
+        });
+
+        static::saved(fn (self $item) => $item->quotation?->recalculateRevenueTotals());
+        static::deleted(fn (self $item) => $item->quotation?->recalculateRevenueTotals());
+    }
+
     protected function casts(): array
     {
         return [

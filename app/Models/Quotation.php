@@ -87,8 +87,18 @@ class Quotation extends Model
 
         $revenueItems = $items->where('counts_as_revenue', true);
         $labItemTypes = ['lab', 'testing'];
+        $subtotal = $items->sum(
+            fn (QuotationItem $item): float => (float) $item->quantity * (float) $item->unit_price,
+        );
+        $total = (float) $items->sum('line_total');
 
         $this->forceFill([
+            'subtotal' => round($subtotal, 2),
+            'tax_total' => round($total - $subtotal, 2),
+            'total' => round($total, 2),
+            'total_inr' => $this->currency === 'INR'
+                ? round($total, 2)
+                : round($total * (float) $this->exchange_rate, 2),
             'consulting_revenue' => $revenueItems
                 ->reject(fn (QuotationItem $item): bool => in_array($item->item_type, $labItemTypes, true))
                 ->sum('line_total'),

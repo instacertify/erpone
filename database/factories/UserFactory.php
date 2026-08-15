@@ -31,8 +31,29 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
             'is_active' => true,
-            'role' => \App\Enums\UserRole::Employee,
+            'role' => \App\Enums\UserRole::Sales,
         ];
+    }
+
+    public function sales(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => \App\Enums\UserRole::Sales,
+        ]);
+    }
+
+    public function operations(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => \App\Enums\UserRole::Operations,
+        ]);
+    }
+
+    public function allOpsManager(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => \App\Enums\UserRole::AllOpsManager,
+        ]);
     }
 
     public function superAdmin(): static

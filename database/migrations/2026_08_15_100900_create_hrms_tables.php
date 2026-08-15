@@ -36,7 +36,7 @@ return new class extends Migration
             $table->date('hired_at')->nullable();
             $table->date('terminated_at')->nullable();
             $table->decimal('salary', 15, 2)->nullable();
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('INR');
             $table->timestamps();
             $table->softDeletes();
         });

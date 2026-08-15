@@ -43,10 +43,10 @@ class ErpFoundationTest extends TestCase
 
     public function test_only_admins_can_access_settings_page(): void
     {
-        $employee = User::factory()->create(['role' => UserRole::Employee]);
+        $sales = User::factory()->create(['role' => UserRole::Sales]);
         $admin = User::factory()->create(['role' => UserRole::Admin]);
 
-        $this->actingAs($employee)
+        $this->actingAs($sales)
             ->get('/admin/erp-settings')
             ->assertForbidden();
 

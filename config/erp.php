@@ -22,12 +22,12 @@ return [
 
     'brand' => [
         'primary' => '#065175',
-        'highlight' => '#ec691f',
+        'highlight' => '#ec6820',
     ],
 
     'currency' => [
         'primary' => 'INR',
-        'quote' => ['INR', 'USD'],
+        'quote' => ['INR', 'USD', 'EUR'],
     ],
 
     'modules' => [

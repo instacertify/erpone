@@ -5,14 +5,15 @@ namespace App\Filament\Resources\Customers;
 use App\Filament\Concerns\BelongsToErpModule;
 use App\Filament\Resources\Customers\Pages\ManageCustomers;
 use App\Models\Customer;
+use App\Services\Settings\ErpSettings;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -47,19 +48,28 @@ class CustomerResource extends Resource
                 TextInput::make('phone')->tel()->maxLength(50),
                 TextInput::make('website')->url()->maxLength(255),
                 TextInput::make('industry')->maxLength(100),
+                Select::make('company_size')
+                    ->options([
+                        'micro' => 'Micro',
+                        'small' => 'Small',
+                        'medium' => 'Medium',
+                        'large' => 'Large',
+                    ]),
                 Select::make('status')->options([
                     'active' => 'Active',
                     'inactive' => 'Inactive',
                     'prospect' => 'Prospect',
                 ])->required()->default('active'),
                 Select::make('preferred_currency')
-                    ->options(app(\App\Services\Settings\ErpSettings::class)->currencyOptions())
+                    ->options(app(ErpSettings::class)->currencyOptions())
                     ->default('INR')
                     ->required()
                     ->helperText('INR is primary. Choose USD for international quotes.'),
                 TextInput::make('gstin')->label('GSTIN')->maxLength(20),
                 Select::make('account_manager_id')->relationship('accountManager', 'name')->searchable()->preload(),
-                Textarea::make('notes')->columnSpanFull(),
+                Textarea::make('notes')
+                    ->helperText('Documents, progress, credentials, commitments, incidents, and deliverables are managed in CRM → Customer Records.')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -70,8 +80,10 @@ class CustomerResource extends Resource
                 TextColumn::make('code')->searchable()->sortable(),
                 TextColumn::make('name')->searchable()->sortable(),
                 TextColumn::make('email')->searchable(),
+                TextColumn::make('company_size')->label('Size')->badge(),
                 TextColumn::make('preferred_currency')->label('Currency')->badge(),
                 TextColumn::make('gstin')->toggleable(),
+                TextColumn::make('records_count')->counts('records')->label('Records'),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('accountManager.name')->label('Account manager'),
                 TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
