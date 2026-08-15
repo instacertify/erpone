@@ -1,0 +1,211 @@
+# Instacertify ERP — production Docker Compose stack
+# One-click: ./scripts/install.sh
+# Target: Hostinger VPS (Ubuntu 24.04) with Docker Engine 29.x + Compose v2
+
+name: instacertify-erp
+
+services:
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./:/var/www/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - app_storage:/var/www/html/storage:ro
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - erp
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www/html
+      - app_storage:/var/www/html/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit(0);'"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    command: php artisan horizon
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www/html
+      - app_storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    networks:
+      - erp
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    restart: unless-stopped
+    command: php artisan schedule:work
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www/html
+      - app_storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - erp
+
+  postgres:
+    image: postgres:18.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-instacertify}
+      POSTGRES_USER: ${DB_USERNAME:-instacertify}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-instacertify} -d ${DB_DATABASE:-instacertify}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp
+
+  valkey:
+    image: valkey/valkey:9.1.1
+    restart: unless-stopped
+    command: ["valkey-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"]
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-instacertify}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks:
+      - erp
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      mc mb --ignore-existing local/$${AWS_BUCKET:-instacertify};
+      mc anonymous set none local/$${AWS_BUCKET:-instacertify};
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-instacertify}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      AWS_BUCKET: ${AWS_BUCKET:-instacertify}
+    networks:
+      - erp
+
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - erp
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD when enabling monitoring}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - erp
+
+  glitchtip:
+    image: glitchtip/glitchtip:latest
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    environment:
+      DATABASE_URL: postgres://${DB_USERNAME:-instacertify}:${DB_PASSWORD}@postgres:5432/glitchtip
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-changeme-glitchtip-secret}
+      PORT: 8000
+      EMAIL_URL: consolemail://
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${GLITCHTIP_PORT:-8001}:8000"
+    networks:
+      - erp
+
+networks:
+  erp:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  valkey_data:
+  minio_data:
+  app_storage:
+  prometheus_data:
+  grafana_data:
