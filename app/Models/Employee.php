@@ -10,9 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'uuid', 'employee_code', 'user_id', 'department_id', 'manager_id', 'first_name',
-    'last_name', 'email', 'phone', 'job_title', 'employment_type', 'status',
-    'hired_at', 'terminated_at', 'salary', 'currency',
+    'uuid', 'employee_code', 'joining_letter_qr', 'joining_letter_path', 'user_id',
+    'department_id', 'manager_id', 'first_name', 'last_name', 'email', 'phone',
+    'job_title', 'employment_type', 'status', 'hired_at', 'terminated_at',
+    'salary', 'currency',
 ])]
 class Employee extends Model
 {

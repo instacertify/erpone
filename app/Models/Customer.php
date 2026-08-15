@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
     'uuid', 'code', 'name', 'legal_name', 'email', 'phone', 'website', 'industry',
-    'status', 'billing_address', 'shipping_address', 'city', 'state', 'country',
+    'company_size', 'status', 'billing_address', 'shipping_address', 'city', 'state', 'country',
     'postal_code', 'tax_id', 'preferred_currency', 'gstin', 'account_manager_id', 'notes', 'meta',
 ])]
 class Customer extends Model
@@ -53,6 +53,11 @@ class Customer extends Model
     public function samples(): HasMany
     {
         return $this->hasMany(Sample::class);
+    }
+
+    public function records(): HasMany
+    {
+        return $this->hasMany(CustomerRecord::class);
     }
 
     public function quotations(): HasMany

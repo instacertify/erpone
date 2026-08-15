@@ -9,8 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
-    'uuid', 'title', 'customer_id', 'contact_id', 'owner_id', 'source', 'stage',
-    'estimated_value', 'currency', 'expected_close_date', 'probability', 'notes', 'meta',
+    'uuid', 'title', 'person_name', 'company_name', 'request_type', 'company_size',
+    'country', 'state', 'contact_number', 'customer_id', 'contact_id', 'owner_id',
+    'consultant_id', 'source', 'lead_source', 'stage', 'estimated_value', 'currency',
+    'expected_close_date', 'expected_timeline', 'probability', 'notes',
+    'company_address', 'gst_details', 'meta',
 ])]
 class Lead extends Model
 {
@@ -39,5 +42,10 @@ class Lead extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function consultant(): BelongsTo
+    {
+        return $this->belongsTo(Consultant::class);
     }
 }
